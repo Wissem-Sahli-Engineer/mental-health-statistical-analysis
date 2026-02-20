@@ -1,0 +1,276 @@
+---
+title: "projet acp"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-04-29"
+---
+1. Importation des données
+Installe les packages nécessaires
+```{r}
+install.packages("readxl")
+install.packages("dplyr")
+```
+```
+
+```
+Puis charge ton fichier :
+```{r}
+library(readxl)
+library(dplyr)
+
+data <- read_xlsx("C:\\Users\\chaim\\OneDrive\\Bureau\\Formulaire sur la santé mentale (Responses) (1)234.xlsx")
+
+```
+ 2. Statistiques descriptives:
+ Répartition selon le sexe :
+```{r}
+sexe <- data$sexe
+freq1=table(sexe)
+pct1 <- round(freq1/sum(freq1)*100)
+lbls1 <- c("Homme","Femme")
+lbls1 <- paste(lbls1, pct1)
+lbls1 <- paste(lbls1,"%",sep="")
+pie(freq1,labels = lbls1, col=c("#d8e2dc","#fae1dd"),main="Répartition selon le Sexe")
+
+```
+Répartition par âge :
+```{r}
+library(readxl)
+library(dplyr)
+
+# Importation du fichier
+data <- read_xlsx("C:/Users/chaim/OneDrive/Bureau/Formulaire sur la santé mentale (Responses) (1).xlsx")
+
+# Utiliser le nom exact de la colonne
+age <- as.numeric(data$`Quelle âge avez vous?`)
+
+# Vérifie qu'il n'y a pas de NA
+age <- na.omit(age)
+
+# Catégoriser en tranches d'âge
+age_group <- cut(age,
+                 breaks = c( 18, 25, 30, Inf),
+                 labels = c( "18-20", "20-26", "Plus de 26"))
+
+# Créer le camembert
+colors <- c("#555b6e","#89b0ae","#bee3db","#ffd6ba","#fae1dd","#f0c33c")
+pie(table(age_group),
+    labels = paste0(names(table(age_group)), " (", table(age_group), ")"),
+    col = colors,
+    main = "Répartition selon l'âge")
+
+
+```
+Répartition par niveau d'étude:
+```{r}
+# Remplacer par le nom exact de la colonne (vérifie avec names(data) si besoin)
+etude <- data$`Niveau d'étude`
+
+# Nettoyer les valeurs (au cas où il y a des espaces en trop)
+etude <- trimws(etude)
+
+# Tableau de fréquence
+freq_etude <- table(etude)
+pct_etude <- round(prop.table(freq_etude) * 100)
+lbls <- paste(names(freq_etude), " (", pct_etude, "%)", sep="")
+
+# Camembert
+colors <- c("#6a994e", "#a7c957", "#f2e8cf", "#bc4749")
+pie(freq_etude,
+    labels = lbls,
+    col = colors,
+    main = "Répartition selon le niveau d'étude")
+
+```
+répartition du lieu de résidence :
+```{r}
+# Charger la bibliothèque pour lire Excel
+library(readxl)
+
+# Extraire les réponses à la question "Lieu de résidence"
+lieux <- data$`Lieu de résidence`
+
+# Calcul de la répartition
+repartition <- table(lieux)
+
+# Définir les couleurs
+couleurs <- c("skyblue", "orange", "palegreen")
+
+# Tracer le camembert
+pie(repartition,
+    col = couleurs,
+    main = "Répartition des lieux de résidence")
+
+
+```
+Répartition selon Nombre d’heures de sommeil moyen par nuit :  
+```
+```{r}
+library(dplyr)
+library(readxl)
+
+# Corriger le nom de la colonne (copier-coller exact depuis names(data) si besoin)
+colnames(data)[grepl("sommeil", colnames(data), ignore.case = TRUE)]
+
+# Extraire et nettoyer la colonne de sommeil
+sleep_Time <- data$`Nombre d’heures de sommeil moyen par nuit `
+sleep_Time <- gsub("[^0-9\\.]", "", sleep_Time)        # Retirer tout sauf chiffres et points
+sleep_Time <- as.numeric(sleep_Time)                  # Convertir en numérique
+
+# Retirer les NA et les valeurs aberrantes (par exemple <3 ou >12)
+sleep_Time <- sleep_Time[!is.na(sleep_Time) & sleep_Time >= 3 & sleep_Time <= 12]
+
+# Créer le barplot
+counts <- table(sleep_Time)
+b <- barplot(counts,
+             col = "#69b3a2",
+             ylim = c(0, max(counts) + 2),
+             main = "Répartition selon le nombre d'heures de sommeil",
+             xlab = "Heures de sommeil",
+             ylab = "Nombre d'étudiants")
+
+# Ajouter les valeurs au-dessus des barres
+text(x = b, y = counts - 1, labels = counts, cex = 0.8, col = "black")
+
+
+```
+## Analyse en composantes principales:
+1.But de l’ACP :
+L’ACP a pour but d’étudier les différents critères influençant la santé mentale des individus, puis de regrouper les réponses selon des dimensions principales permettant de mieux comprendre les facteurs dominants
+```{r}
+library(FactoMineR)
+```
+```{r}
+X=as.matrix(data[,6:33])
+res.pca1 <- PCA (X,graph=FALSE)
+```
+2.Les axes à conserver:
+On commence par le critére du taux d’inertie cumulé et de Kaiser:
+```{r}
+library(factoextra)
+```
+```{r}
+eig.val1 <- get_eigenvalue(res.pca1)
+eig.val1
+```
+```{r}
+library(factoextra)
+var1 <- get_pca_var(res.pca1)
+var1
+```
+```{r}
+library("corrplot")
+
+```
+```{r}
+corrplot(var1$cos2, is.corr=FALSE)
+
+```
+```{r}
+res.pca1$var$coord
+```
+```{r}
+library(factoextra)
+fviz_eig(res.pca1, addlabels = TRUE, ylim = c(0, 50))
+```
+3.interprétation des axes :
+```
+```{r}
+fviz_pca_var(res.pca1, axes=c(1,2), col.var="cos2") +
+scale_color_gradient2(low="white", mid="blue",
+high="red", midpoint=0.6) +
+theme_minimal()
+```
+Interprétation de cette première carte des variables (i.e. axes 1 et 2) :
+
+
+
+
+
+
+
+
+
+
+
+
+4.interprétation de carte des individus :
+```{r}
+fviz_pca_ind(res.pca1,geom ="text",col.ind="cos2")+
+scale_color_gradient2(low="blue", mid="white",
+high="red", midpoint=0.5)
+
+```
+
+
+```{r}
+plot.PCA(res.pca1, axes=c(1, 2), choix="ind", cex=0.7)
+
+```
+## Analyse de correspondance Multiple:
+But de l’ACM:
+
+
+
+
+
+
+
+
+1.Choix de nombre d’axes :
+
+```{r}
+res.mca <- MCA (data[,c(34:41)], graph = FALSE)
+res.mca$eig
+fviz_screeplot(res.mca)
+
+```
+2.Interprétation de la première carte des modalités:
+
+```{r}
+fviz_mca_var (res.mca,
+repel = TRUE,
+ggtheme = theme_minimal ())
+```
+
+
+
+
+
+
+
+
+3.Interprétation de la première carte des individus:
+```{r}
+fviz_mca_biplot(res.mca,
+col.ind="cos2",
+invisible ="var",repel = TRUE,
+ggtheme = theme_minimal ())
+```
+Classification:
+1.But de Classification
+L’idée de classification de différents éléments d’un jeu de données en plusieurs catégories est de regrouper
+les datas en fonction de leur similarité. Comme les datas présentent des caractéristiques communes, il est
+plus facile de prédire leur comportement
+2.Classification
+```{r}
+res.pca <- PCA(X, ncp = 4, graph = FALSE)
+res.hcpc <- HCPC(res.pca,nb.clust = 4, graph = FALSE)
+```
+```{r}
+HCPC (res.pca1, nb.clust = 4, graph = TRUE)
+```
+## 12 "description of the tree"
+```{r}
+fviz_cluster(res.hcpc,
+repel = TRUE,
+show.clust.cent = TRUE,
+palette = "jco",
+ggtheme = theme_minimal(),
+main = "Factor map"
+)
+```
+3.Les Classes Observées :
+
+
